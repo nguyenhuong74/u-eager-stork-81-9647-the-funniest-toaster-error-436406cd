@@ -14,5 +14,25 @@ import { mkdirSync, writeFileSync } from "node:fs";
 const MESSAGE =
   "ERROR: Toasting failed. The bread has unionized. Negotiations begin at dawn.";
 
+// The bounty rules: the entry must be a single line of 1-120 chars.
+// Validate the fixed message against those rules so a future typo
+// fails loudly here instead of silently producing a bad entry.
+function validate(message: string): void {
+  if (message.length < 1 || message.length > 120) {
+    throw new Error(`entry must be 1-120 chars, got ${message.length}`);
+  }
+  if (message.includes("\n") || message.includes("\r")) {
+    throw new Error("entry must be a single line");
+  }
+}
+
+validate(MESSAGE);
 mkdirSync("/output", { recursive: true });
-writeFileSync("/output/entry.txt", MESSAGE, "utf8");
+// Write the message as explicit UTF-8 bytes (no trailing newline):
+// the entry is exactly one line, so the file content is the message
+// and nothing else. Assert the known length so any accidental edit
+// to the text is caught before it can change the output bytes.
+if (MESSAGE.length !== 76) {
+  throw new Error(`unexpected entry length ${MESSAGE.length}, expected 76`);
+}
+writeFileSync("/output/entry.txt", Buffer.from(MESSAGE, "utf8"));
